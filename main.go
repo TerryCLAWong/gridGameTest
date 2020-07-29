@@ -31,36 +31,63 @@ func (g *grid) checkFilled(x, y int) bool {
 	return false
 }
 
+func (g *grid) checkValidMove(x, y int) bool {
+	if g.checkFilled(x, y) {
+		return false
+	} else if x < 0 || y < 0 {
+		return false
+	} else if x >= g.size || y >= g.size {
+		return false
+	} else if g.current != nil {
+		if x == g.current[0]+1 && y == g.current[1] {
+			return true
+		} else if x == g.current[0]-1 && y == g.current[1] {
+			return true
+		} else if x == g.current[0] && y == g.current[1]+1 {
+			return true
+		} else if x == g.current[0] && y == g.current[1]-1 {
+			return true
+		}
+	}
+	return true
+}
+
 func (g *grid) move(x, y int) {
 	g.current = []int{x, y}
 }
 
 func drawGrid(g grid) {
-	if g.current == nil {
-		for i := 0; i < g.size; i++ {
-			fmt.Println("---------------------")
-			fmt.Println("|   |   |   |   |   |")
-		}
-		fmt.Println("---------------------")
-	} else {
+	fmt.Println("\n    0   1   2   3   4")
+	for i := 0; i < g.size; i++ {
 
-		for i := 0; i < g.size; i++ {
-			fmt.Println("---------------------")
+		fmt.Print("  ---------------------\n", i, " ")
 
-			for j := 0; j < g.size; j++ {
+		for j := 0; j < g.size; j++ {
+
+			if g.current == nil {
+				fmt.Print("|   ")
+			} else {
 				if g.checkFilled(i, j) {
 					fmt.Print("| X ")
-					//else if check option TODO
-				} else if i == g.current[0] && j == g.current[1] {
+				} else if j == g.current[0] && i == g.current[1] {
 					fmt.Print("| O ")
+				} else if j == g.current[0]+1 && i == g.current[1] {
+					fmt.Print("| # ")
+				} else if j == g.current[0]-1 && i == g.current[1] {
+					fmt.Print("| # ")
+				} else if j == g.current[0] && i == g.current[1]+1 {
+					fmt.Print("| # ")
+				} else if j == g.current[0] && i == g.current[1]-1 {
+					fmt.Print("| # ")
 				} else {
 					fmt.Print("|   ")
 				}
 			}
-			fmt.Println("|")
 		}
-		fmt.Println("---------------------")
+		fmt.Println("|")
 	}
+	fmt.Println("  ---------------------")
+
 }
 
 func main() {
@@ -69,18 +96,28 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	//First move
-	drawGrid(gameGrid)
-	fmt.Print("Set start location: ")
-	input, _ := reader.ReadString('\n')
-	inputSplit := strings.Split(input, ",")
-	x, err := strconv.Atoi(inputSplit[0])
-	y, err := strconv.Atoi(strings.TrimSpace(inputSplit[1]))
-	if err != nil {
-		fmt.Println("Please input number,number")
-	}
-	gameGrid.move(x, y)
+	for {
+		drawGrid(gameGrid)
+		//Get input
+		fmt.Print("Set start location: ")
+		input, _ := reader.ReadString('\n')
+		inputSplit := strings.Split(input, ",")
+		x, err := strconv.Atoi(inputSplit[0])
+		y, err := strconv.Atoi(strings.TrimSpace(inputSplit[1]))
 
-	//Loop
+		//Validation
+		if err != nil {
+			fmt.Println("Please input: number,number")
+		} else if gameGrid.checkValidMove(x, y) {
+			fmt.Println("Start point:", x, y)
+			gameGrid.move(x, y)
+			break
+		} else {
+			fmt.Println("Invalid move")
+		}
+	}
+
+	//Other moves
 	for {
 		//Check win con
 		if gameGrid.won() {
@@ -106,3 +143,18 @@ func main() {
 
 	}
 }
+
+/*
+    0   1   2   3   4
+  ---------------------
+0 |   |   |   |   |   |
+  ---------------------
+1 |   |   |   |   |   |
+  ---------------------
+2 |   |   |   |   |   |
+  ---------------------
+3 |   |   |   |   |   |
+  ---------------------
+4 |   |   |   |   |   |
+  ---------------------
+*/
