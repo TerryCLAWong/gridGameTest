@@ -52,7 +52,7 @@ func (g *grid) checkValidMove(x, y int) bool {
 	return true
 }
 
-func (g *grid) move(x, y int) {
+func (g *grid) setPosition(x, y int) {
 	g.current = []int{x, y}
 }
 
@@ -90,27 +90,36 @@ func drawGrid(g grid) {
 
 }
 
+func getInput() (int, int, error) {
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	inputSplit := strings.Split(input, ",")
+	x, err := strconv.Atoi(inputSplit[0])
+	if err != nil {
+		return 0, 0, err
+	}
+	y, err := strconv.Atoi(strings.TrimSpace(inputSplit[1]))
+	if err != nil {
+		return 0, 0, err
+	}
+	return x, y, nil
+}
+
 func main() {
 	//Init
 	gameGrid := grid{5, nil, make([][]int, 0)}
-	reader := bufio.NewReader(os.Stdin)
 
 	//First move
 	for {
 		drawGrid(gameGrid)
 		//Get input
-		fmt.Print("Set start location: ")
-		input, _ := reader.ReadString('\n')
-		inputSplit := strings.Split(input, ",")
-		x, err := strconv.Atoi(inputSplit[0])
-		y, err := strconv.Atoi(strings.TrimSpace(inputSplit[1]))
-
-		//Validation
+		x, y, err := getInput()
+		//Validate
 		if err != nil {
 			fmt.Println("Please input: number,number")
 		} else if gameGrid.checkValidMove(x, y) {
 			fmt.Println("Start point:", x, y)
-			gameGrid.move(x, y)
+			gameGrid.setCurrent(x, y)
 			break
 		} else {
 			fmt.Println("Invalid move")
@@ -125,21 +134,17 @@ func main() {
 			break
 		}
 
+		x, y, err := getInput()
 		drawGrid(gameGrid)
 
-		//Get input
-		fmt.Print("Input: ")
-		input, _ := reader.ReadString('\n')
-		fmt.Println(input)
-		/*
-			Print board
-
-			Get input
-			Check input validity
-				if ok, continue
-				if not, print bad message and get input again
-
-		*/
+		if err != nil {
+			fmt.Println("Please input: number,number")
+		} else if gameGrid.checkValidMove(x, y) {
+			//move
+			gameGrid.setPosition(x, y)
+		} else {
+			fmt.Println("Invalid move")
+		}
 
 	}
 }
