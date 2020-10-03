@@ -19,8 +19,8 @@ func (g *grid) fill(x, y int) {
 }
 
 //TODO double check that this does what its supposed to
-func (g *grid) won() bool {
-	return len(g.filled) == g.size*g.size
+func (g *grid) checkWin() bool {
+	return len(g.filled) == g.size*g.size-1
 }
 
 func (g *grid) checkFilled(x, y int) bool {
@@ -55,6 +55,12 @@ func (g *grid) checkValidMove(x, y int) bool {
 	return false
 }
 
+func (g *grid) checkStuck() bool {
+	x := g.current[0]
+	y := g.current[1]
+	return (g.checkFilled(x+1, y) || x+1 == g.size) && (g.checkFilled(x-1, y) || x-1 == -1) && (g.checkFilled(x, y+1) || y+1 == g.size) && (g.checkFilled(x, y-1) || y-1 == -1)
+}
+
 func (g *grid) setPosition(x, y int) {
 	g.current = []int{x, y}
 }
@@ -64,40 +70,44 @@ func (g *grid) move(x, y int) {
 	//x,y guarenteed to be valid
 	if x == g.current[0]+1 && y == g.current[1] { //right
 		for i := g.current[0]; i < g.size; i++ {
-			g.fill(i, y)
+
 			//if next is filled, setpos and break
 			if i == g.size-1 || g.checkFilled(i+1, y) {
 				g.setPosition(i, y)
 				break
 			}
+			g.fill(i, y)
 		}
 	} else if x == g.current[0]-1 && y == g.current[1] { //left
 		for i := g.current[0]; i > -1; i-- {
 			fmt.Println(i, y)
-			g.fill(i, y)
+
 			//if next is filled, setpos and break
 			if i == 0 || g.checkFilled(i-1, y) {
 				g.setPosition(i, y)
 				break
 			}
+			g.fill(i, y)
 		}
 	} else if x == g.current[0] && y == g.current[1]+1 { //down
 		for i := g.current[1]; i < g.size; i++ {
-			g.fill(x, i)
+
 			//if next is filled, setpos and break
 			if i == g.size-1 || g.checkFilled(x, i+1) {
 				g.setPosition(x, i)
 				break
 			}
+			g.fill(x, i)
 		}
 	} else if x == g.current[0] && y == g.current[1]-1 { //up
 		for i := g.current[1]; i > -1; i-- {
-			g.fill(x, i)
+
 			//if next is filled, setpos and break
 			if i == 0 || g.checkFilled(x, i-1) {
 				g.setPosition(x, i)
 				break
 			}
+			g.fill(x, i)
 		}
 	}
 }
@@ -177,13 +187,6 @@ func main() {
 
 	//Other moves
 	for {
-		//TODO check win con should be moved to after a move is completed
-		//Check win con
-		if gameGrid.won() {
-			fmt.Println("YOU WIN!")
-			break
-		}
-
 		//Get input
 		drawGrid(gameGrid)
 		fmt.Println("Place next move:")
@@ -199,6 +202,13 @@ func main() {
 			gameGrid.move(x, y)
 		} else {
 			fmt.Println("Invalid move position\nTry again.")
+		}
+
+		if gameGrid.checkWin() {
+			fmt.Println("Win")
+		} else if gameGrid.checkStuck() {
+			fmt.Println("Stuck")
+			fmt.Println(len(gameGrid.filled))
 		}
 
 		//Post-move conditions
