@@ -14,11 +14,16 @@ type grid struct {
 	filled  [][]int
 }
 
+func (g *grid) multifill(walls [][]int) {
+	for _, wall := range walls {
+		g.filled = append(g.filled, []int{wall[0], wall[1]})
+	}
+}
+
 func (g *grid) fill(x, y int) {
 	g.filled = append(g.filled, []int{x, y})
 }
 
-//TODO double check that this does what its supposed to
 func (g *grid) checkWin() bool {
 	return len(g.filled) == g.size*g.size-1
 }
@@ -65,12 +70,15 @@ func (g *grid) setPosition(x, y int) {
 	g.current = []int{x, y}
 }
 
+/*
+Performs desired move in direction of input parameters x and y.
+Fills out all cells between current position and ending position.
+Input parameters validated by parent function.
+*/
 func (g *grid) move(x, y int) {
-	//get direction
-	//x,y guarenteed to be valid
+	//Same code for each case of direction
 	if x == g.current[0]+1 && y == g.current[1] { //right
 		for i := g.current[0]; i < g.size; i++ {
-
 			//if next is filled, setpos and break
 			if i == g.size-1 || g.checkFilled(i+1, y) {
 				g.setPosition(i, y)
@@ -80,8 +88,6 @@ func (g *grid) move(x, y int) {
 		}
 	} else if x == g.current[0]-1 && y == g.current[1] { //left
 		for i := g.current[0]; i > -1; i-- {
-			fmt.Println(i, y)
-
 			//if next is filled, setpos and break
 			if i == 0 || g.checkFilled(i-1, y) {
 				g.setPosition(i, y)
@@ -91,7 +97,6 @@ func (g *grid) move(x, y int) {
 		}
 	} else if x == g.current[0] && y == g.current[1]+1 { //down
 		for i := g.current[1]; i < g.size; i++ {
-
 			//if next is filled, setpos and break
 			if i == g.size-1 || g.checkFilled(x, i+1) {
 				g.setPosition(x, i)
@@ -101,7 +106,6 @@ func (g *grid) move(x, y int) {
 		}
 	} else if x == g.current[0] && y == g.current[1]-1 { //up
 		for i := g.current[1]; i > -1; i-- {
-
 			//if next is filled, setpos and break
 			if i == 0 || g.checkFilled(x, i-1) {
 				g.setPosition(x, i)
@@ -112,6 +116,11 @@ func (g *grid) move(x, y int) {
 	}
 }
 
+/*
+Draws grid defined by input g
+Takes into account all g's attributes including
+pre-placed walls, current position, move options, post-move walls
+*/
 func drawGrid(g grid) {
 	fmt.Println("\n    0   1   2   3   4")
 	for i := 0; i < g.size; i++ {
@@ -119,9 +128,13 @@ func drawGrid(g grid) {
 		fmt.Print("  ---------------------\n", i, " ")
 
 		for j := 0; j < g.size; j++ {
-
+			//Pre-gamestart rendering
 			if g.current == nil {
-				fmt.Print("|   ")
+				if g.checkFilled(j, i) {
+					fmt.Print("| X ")
+				} else {
+					fmt.Print("|   ")
+				}
 			} else {
 				if j == g.current[0] && i == g.current[1] {
 					fmt.Print("| O ")
@@ -146,6 +159,10 @@ func drawGrid(g grid) {
 
 }
 
+/*
+Gets terminal input and tries to parse format: (integer,integer)
+Returns the integers and error from conversions
+*/
 func getInput() (int, int, error) {
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
@@ -161,15 +178,52 @@ func getInput() (int, int, error) {
 	return x, y, nil
 }
 
+/*
+Instantiates set of levels and iterates through each level as the player completes them.
+*/
 func main() {
-	//Init
-	gameGrid := grid{5, nil, make([][]int, 0)}
+	//Set of levels
+	levels := []struct {
+		g     grid
+		walls [][]int
+	}{
+		{
+			grid{5, nil, make([][]int, 0)},
+			[][]int{{2, 0}, {3, 0}, {4, 0}, {0, 4}, {1, 4}},
+		},
+		{
+			grid{5, nil, make([][]int, 0)},
+			[][]int{{0, 3}, {2, 4}, {3, 2}, {4, 0}},
+		},
+	}
 
+	//Plays levels individually
+	for index, level := range levels {
+		level.g.multifill(level.walls)
+		for !play(level.g) {
+			fmt.Println("No more moves available. Please try again.\nRestarting Level")
+		}
+		fmt.Println("You win!")
+		if index != len(levels)-1 {
+			fmt.Println("Moving onto the next level")
+		} else {
+			fmt.Println("No more levels to complete")
+		}
+	}
+
+}
+
+/*
+Plays the boardstate defined by input grid gameGrid.
+Reads input, performs move on the board state, and renders board
+Returns whether or not the player has sucessfully completed the level
+*/
+func play(gameGrid grid) bool {
 	//First move
 	for {
 		drawGrid(gameGrid)
 		//Get input
-		fmt.Println("Place starting move:")
+		fmt.Println("Place starting move (x,y):")
 		x, y, err := getInput()
 
 		//Validate
@@ -189,7 +243,7 @@ func main() {
 	for {
 		//Get input
 		drawGrid(gameGrid)
-		fmt.Println("Place next move:")
+		fmt.Println("Place next move (x,y):")
 		x, y, err := getInput()
 		if err != nil {
 			fmt.Println("Please input: number,number\nTry again")
@@ -198,22 +252,17 @@ func main() {
 
 		//Validate move
 		if gameGrid.checkValidMove(x, y) {
-			//move
 			gameGrid.move(x, y)
 		} else {
 			fmt.Println("Invalid move position\nTry again.")
 		}
 
+		//Post move checking
 		if gameGrid.checkWin() {
-			fmt.Println("Win")
+			return true
 		} else if gameGrid.checkStuck() {
-			fmt.Println("Stuck")
-			fmt.Println(len(gameGrid.filled))
+			return false
 		}
-
-		//Post-move conditions
-		//check for cannot move
-		//check for win condition
 	}
 }
 
